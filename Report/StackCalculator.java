@@ -209,7 +209,7 @@ public class StackCalculator {
                     break;
                 default:
                         if(exp < '0' || exp > '9')
-                            throw new Exception("syntaxCondition(): There is not number or unavailable character in formular");
+                            throw new Exception("syntaxCondition(): There is not number in formular");
                         number_count++;
                     break;
             }
