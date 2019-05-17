@@ -3,20 +3,18 @@ import java.util.Scanner;
 abstract class Stack {
     int top = -1;
     int size = 100;
-
     boolean isEmpty() {
         return top == -1;
     }
 }
 
 class Operator extends Stack {
-    private String[] stack = new String[size];
-
-    void push(String op) {
+    private char[] stack = new char[size];
+    void push(char op) {
         stack[++top] = op;
     }
 
-    String pop() {
+    char pop() {
         return stack[top--];
     }
 }
@@ -41,6 +39,7 @@ public class StackCalculator {
             System.out.print(" >> ");
             String expression = scanner.nextLine();
             if (expression.equals("exit")) System.exit(-1);
+           expression = Preprocessor(expression);
             if (syntaxCondition(expression)) {
                 String post_expression = transPostfix(expression);
                 double result = calculate(post_expression);
@@ -50,37 +49,45 @@ public class StackCalculator {
         }
     }
 
+    private static String Preprocessor(String expression) {
+        String[] split_expression = expression.split(" ");
+        StringBuilder fit_expression = new StringBuilder();
+        for(String exp : split_expression) {
+            fit_expression.append(exp);
+        }
+        return fit_expression.toString();
+    }
     private static String transPostfix(String expression) {
-        String[] expressionArr = expression.split(" ");
         StringBuilder post_expression = new StringBuilder();
         Operator operator = new Operator();
-        for (String exp : expressionArr) {
+        for (int i = 0; i < expression.length(); i++) {
+            char exp = expression.charAt(i);
             switch (exp) {
-                case "(":
-                case "{":
-                case "[":
+                case '(':
+                case '{':
+                case '[':
                     operator.push(exp);
                     break;
-                case ")":
-                case "}":
-                case "]":
+                case ')':
+                case '}':
+                case ']':
                     while (true) {
-                        String op = operator.pop();
-                        if (!op.equals("(") && !op.equals("{") && !op.equals("[")) {
+                        char op = operator.pop();
+                        if (!(op == '(') && !(op == '{') && !(op == '[')) {
                             post_expression.append(op).append(" ");
                         } else {
                             break;
                         }
                     }
                     break;
-                case "+":
-                case "-":
+                case '+':
+                case '-':
                     while (true) {
                         if (operator.isEmpty()) {
                             break;
                         }
-                        String op = operator.pop();
-                        if (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")) {
+                        char op = operator.pop();
+                        if (op == '+' || op == '-' || op == '*' || op == '/') {
                             post_expression.append(op).append(" ");
                         } else {
                             operator.push(op);
@@ -89,14 +96,14 @@ public class StackCalculator {
                     }
                     operator.push(exp);
                     break;
-                case "*":
-                case "/":
+                case '*':
+                case '/':
                     while (true) {
                         if (operator.isEmpty()) {
                             break;
                         }
-                        String op = operator.pop();
-                        if (op.equals("*") || op.equals("/")) {
+                        char op = operator.pop();
+                        if (op == '*' || op == '/') {
                             post_expression.append(op).append(" ");
                         } else {
                             operator.push(op);
@@ -106,12 +113,19 @@ public class StackCalculator {
                     operator.push(exp);
                     break;
                 default:
-                    post_expression.append(exp).append(" ");
+                    post_expression.append(exp);
+                    if(expression.length() != i + 1) {
+                        char op = expression.charAt(i + 1);
+                        if (op == '+' || op == '-' || op == '*' || op == '/'
+                                || op == ')' || op == '}' || op == ']') {
+                            post_expression.append(" ");
+                        }
+                    }
                     break;
             }
         }
         while (!operator.isEmpty()) {
-            post_expression.append(operator.pop()).append(" ");
+            post_expression.append(" ").append(operator.pop());
         }
         return post_expression.toString();
     }
@@ -146,59 +160,56 @@ public class StackCalculator {
     }
 
     private static boolean syntaxCondition(String expression) throws Exception {
-        String[] expressionArr = expression.split(" ");
         Operator operator = new Operator();
         int number_count = 0;
-        for (int i = 0; i < expressionArr.length; i++) {
-            switch (expressionArr[i]) {
-                case "+":
-                case "-":
-                case "*":
-                case "/":
-                    if (expressionArr[i + 1].equals("+") || expressionArr[i + 1].equals("-")
-                            || expressionArr[i + 1].equals("*") || expressionArr[i + 1].equals("/")) {
+        for (int i = 0; i < expression.length(); i++) {
+            char exp = expression.charAt(i);
+            switch (exp) {
+                case '+':
+                case '-':
+                case '*':
+                case '/':
+                    char op = expression.charAt(i + 1);
+                    if (op == '+' || op == '-' || op == '*' || op == '/') {
                         throw new Exception("syntaxCondition(): Operator error");
                     }
                     break;
-                case "(":
-                case "{":
-                case "[":
-                    operator.push(expressionArr[i]);
+                case '(':
+                case '{':
+                case '[':
+                    operator.push(exp);
                     break;
-                case ")":
+                case ')':
                     if (operator.isEmpty()) {
                         throw new Exception("syntaxCondition(): Syntax error");
                     } else {
-                        if (!operator.pop().equals("(")) {
+                        if (!(operator.pop() == '(')) {
                             throw new Exception("syntaxCondition(): Syntax error");
                         }
                     }
                     break;
-                case "}":
+                case '}':
                     if (operator.isEmpty()) {
                         throw new Exception("syntaxCondition(): Syntax error");
                     } else {
-                        if (!operator.pop().equals("}")) {
+                        if (!(operator.pop() == '{')) {
                             throw new Exception("syntaxCondition(): Syntax error");
                         }
                     }
                     break;
-                case "]":
+                case ']':
                     if (operator.isEmpty()) {
                         throw new Exception("syntaxCondition(): Syntax error");
                     } else {
-                        if (!operator.pop().equals("]")) {
+                        if (!(operator.pop() == '[')) {
                             throw new Exception("syntaxCondition(): Syntax error");
                         }
                     }
                     break;
                 default:
-                    try {
-                        Double.parseDouble(expressionArr[i]);
+                        if(exp < '0' || exp > '9')
+                            throw new Exception("syntaxCondition(): There is not number in formular");
                         number_count++;
-                    } catch (NumberFormatException e) {
-                        throw new Exception("syntaxCondition(): There is not number in formular");
-                    }
                     break;
             }
         }
@@ -206,9 +217,9 @@ public class StackCalculator {
             throw new Exception("syntaxCondition(): There is no number or unavailable in formular");
         }
         while (!operator.isEmpty()) {
-            String op = operator.pop();
-            if (op.equals("+") || op.equals("-") || op.equals("*") || op.equals("/")
-                    || op.equals("(") || op.equals("{") || op.equals("[")) {
+            char op = operator.pop();
+            if (op == '+' || op == '-' || op == '*' || op == '/'
+                    || op == '(' || op == '{' || op == '[') {
                 throw new Exception("syntaxCondition(): '" + op + "'Syntax error");
             }
         }
